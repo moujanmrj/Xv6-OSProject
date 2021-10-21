@@ -532,3 +532,24 @@ procdump(void)
     cprintf("\n");
   }
 }
+
+int getProcCount(void)
+{
+  struct proc *p;
+  int procCount = 0;
+
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    if(p->state != UNUSED) procCount++;
+  }
+
+  cprintf("Number of Processes in System: %d\n", procCount);
+  return procCount;
+}
+
+extern readCount;
+
+int getReadCount(void)
+{
+  cprintf("Number of Read Procedure Calls in System: %d\n", readCount);
+  return readCount;
+}
