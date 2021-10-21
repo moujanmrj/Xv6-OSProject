@@ -7,6 +7,8 @@
 #include "proc.h"
 #include "spinlock.h"
 
+extern int readCount;
+
 struct {
   struct spinlock lock;
   struct proc proc[NPROC];
@@ -545,8 +547,6 @@ int getProcCount(void)
   cprintf("Number of Processes in System: %d\n", procCount);
   return procCount;
 }
-
-extern readCount;
 
 int getReadCount(void)
 {
