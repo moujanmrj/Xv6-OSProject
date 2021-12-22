@@ -105,3 +105,17 @@ sys_getReadCount(void)
   getReadCount();
   return 0;
 }
+
+int 
+sys_clone(void){
+  int stack_pointer = 0;
+  if(argint(0, &stack_pointer) < 0){
+    return -1;
+  }
+    return clone((void*) stack_pointer);
+}
+
+int
+sys_join(void){
+  return join();
+}
