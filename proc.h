@@ -73,7 +73,6 @@ enum schedulePolicy
   DEFAULT = 0,
   ROUNDROBIN = 1,
   PRIORITY = 2,
-  INVERSEPRIORITY = 3,
-  MULTILAYREDPRIORITY = 4
+  MULTILAYREDPRIORITY = 3
 };
 extern enum schedulePolicy policy;

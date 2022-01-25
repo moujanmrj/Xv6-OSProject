@@ -112,17 +112,11 @@ trap(struct trapframe *tf)
       break;
 
     case ROUNDROBIN:
-      if (myproc()->remainingtime == 0){
-        myproc()->remainingtime = QUANTOM;
+      if(ticks % QUANTOM == 0)
         yield();
-      }else{
-        myproc()->remainingtime--;
-      }
       break;
 
     case PRIORITY:
-
-    case INVERSEPRIORITY:
       yield();
       break;
 

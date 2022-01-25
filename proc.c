@@ -404,6 +404,24 @@ wait(void)
   }
 }
 
+void 
+switch_process(struct cpu *c, struct proc *p)
+{
+  // Switch to chosen process.  It is the process's job
+  // to release ptable.lock and then reacquire it
+  // before jumping back to us.
+  c->proc = p;
+  switchuvm(p);
+  p->state = RUNNING;
+
+  swtch(&(c->scheduler), p->context);
+  switchkvm();
+
+  // Process is done running for now.
+  // It should have changed its p->state before coming back.
+  c->proc = 0;
+}
+
 //PAGEBREAK: 42
 // Per-CPU process scheduler.
 // Each CPU calls scheduler() after setting itself up.
@@ -412,39 +430,65 @@ wait(void)
 //  - swtch to start running that process
 //  - eventually that process transfers control
 //      via swtch back to the scheduler.
-void
+void 
 scheduler(void)
 {
   struct proc *p;
+
+  struct proc *highest_p = 0; // runnable process with highest priority
+  int hasRunnable = 0;        // Whether there exists a runnable process or not
+
   struct cpu *c = mycpu();
   c->proc = 0;
-  
-  for(;;){
+
+  for (;;)
+  {
     // Enable interrupts on this processor.
     sti();
 
-    // Loop over process table looking for process to run.
     acquire(&ptable.lock);
-    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      if(p->state != RUNNABLE)
-        continue;
+    switch (policy)
+    {
+    case DEFAULT:
+    case ROUNDROBIN:
+      for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+      {
+        if (p->state != RUNNABLE)
+          continue;
+        switch_process(c, p);
+      }
+      break;
 
-      // Switch to chosen process.  It is the process's job
-      // to release ptable.lock and then reacquire it
-      // before jumping back to us.
-      c->proc = p;
-      switchuvm(p);
-      p->state = RUNNING;
+    case PRIORITY:
+      hasRunnable = 0;
+      for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+      {
+        if (p->state == RUNNABLE)
+        {
+          highest_p = p;
+          hasRunnable = 1;
+          break;
+        }
+      }
 
-      swtch(&(c->scheduler), p->context);
-      switchkvm();
+      for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) // finding the process with highest priority
+      {
+        if (p->state != RUNNABLE)
+          continue;
+        if (p->priority < highest_p->priority)
+          highest_p = p;
+      }
 
-      // Process is done running for now.
-      // It should have changed its p->state before coming back.
-      c->proc = 0;
+      if (hasRunnable)
+      {
+        switch_process(c, highest_p);
+      }
+      break; 
+
+    case MULTILAYREDPRIORITY:
+      break;
     }
     release(&ptable.lock);
-
   }
 }
 
