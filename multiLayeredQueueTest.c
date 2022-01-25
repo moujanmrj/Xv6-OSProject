@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
         printf(1, "\n\n\n*****Times for each child*****\n");
         int *procTimes = malloc(4 * sizeof(int));
         int i = 0;
-        while (customWait(procTimes) > 0)
+        while (customizedWait(procTimes) > 0)
         {
             int childQueue = procTimes[3];
             int childTurnaround = procTimes[0];

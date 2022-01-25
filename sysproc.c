@@ -182,7 +182,7 @@ sys_customizedWait(void)
   }
   else
   {
-    return customWait(procTimes);
+    return customizedWait(procTimes);
   }
 }
 

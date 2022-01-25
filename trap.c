@@ -155,7 +155,7 @@ trap(struct trapframe *tf)
 
   if (tf->trapno == T_IRQ0 + IRQ_TIMER)
   {
-    updateStateDurations();
+    updateStateTimes();
   }
   
     // yield();

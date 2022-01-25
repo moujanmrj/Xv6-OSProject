@@ -131,6 +131,7 @@ int             getWaitingTime(int pid);
 int             getCBT(int pid);
 int             customizedWait(int *procTimes);
 int             setQueue(int queueNumber);
+void            updateStateTimes();
 
 // swtch.S
 void            swtch(struct context**, struct context*);
