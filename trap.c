@@ -102,11 +102,66 @@ trap(struct trapframe *tf)
 
   // Force process to give up CPU on clock tick.
   // If interrupts were on while locks held, would need to check nlock.
-  if(myproc() && myproc()->state == RUNNING &&
-     tf->trapno == T_IRQ0+IRQ_TIMER)
-    yield();
+  if(myproc() && myproc()->state == RUNNING && tf->trapno == T_IRQ0+IRQ_TIMER){
+    // if(ticks % QUANTOM == 0)
+    //   yield();
+    
+    switch (policy){
+    case DEFAULT:
+      yield();
+      break;
+
+    case ROUNDROBIN:
+      if (myproc()->remainingtime == 0){
+        myproc()->remainingtime = QUANTOM;
+        yield();
+      }else{
+        myproc()->remainingtime--;
+      }
+      break;
+
+    case PRIORITY:
+
+    case INVERSEPRIORITY:
+      yield();
+      break;
+
+    case MULTILAYREDPRIORITY:
+      switch (myproc()->queue){
+      case 1: // default
+
+      case 2: // priority scheduling
+
+      case 3: // reverse priority scheduling
+        yield();
+        break;
+
+      case 4: // round robin scheduling
+        if (myproc()->remainingtime == 0){
+          myproc()->remainingtime = QUANTOM;
+          yield();
+        }else{
+          myproc()->remainingtime--;
+        }
+        break;
+
+      default:
+        yield();
+        break;
+      }
+      break;
+    }
+  }
+
+  if (tf->trapno == T_IRQ0 + IRQ_TIMER)
+  {
+    updateStateDurations();
+  }
+  
+    // yield();
 
   // Check if the process has been killed since we yielded
   if(myproc() && myproc()->killed && (tf->cs&3) == DPL_USER)
     exit();
+
 }

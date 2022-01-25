@@ -51,6 +51,15 @@ struct proc {
   char name[16];               // Process name (debugging)
   int stackTop;
   int threads;
+  int queue; 
+  int priority;  
+
+  int creationtime;            // the time the process was created - embryo
+  int sleepingtime;            // the time the process was in sleeping state
+  int runnabletime;            // the time the process was in runnable state
+  int runningtime;             // the time the process was in running state
+  int terminationtime;         // the time the process was terminated - zombie
+  int remainingtime;           // the remaining time for round robin scheduling
 };
 
 // Process memory is laid out contiguously, low addresses first:
@@ -58,3 +67,13 @@ struct proc {
 //   original data and bss
 //   fixed-size stack
 //   expandable heap
+
+enum schedulePolicy
+{
+  DEFAULT = 0,
+  ROUNDROBIN = 1,
+  PRIORITY = 2,
+  INVERSEPRIORITY = 3,
+  MULTILAYREDPRIORITY = 4
+};
+extern enum schedulePolicy policy;

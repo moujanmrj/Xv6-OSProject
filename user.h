@@ -27,6 +27,13 @@ int getProcCount(void);
 int getReadCount(void);
 int clone(void *stack);
 int join(void);
+int setPriority(int newPriority);
+int changePolicy(int newPolicy);
+int getTurnAroundTime(int pid);
+int getWaitingTime(int pid);
+int getCBT(int pid);
+int customizedWait(int *procTimes);
+int setQueue(int queueNumber);
 
 // ulib.c
 int stat(const char*, struct stat*);

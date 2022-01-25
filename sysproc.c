@@ -107,7 +107,8 @@ sys_getReadCount(void)
 }
 
 int 
-sys_clone(void){
+sys_clone(void)
+{
   int stack_pointer = 0;
   if(argint(0, &stack_pointer) < 0){
     return -1;
@@ -116,6 +117,83 @@ sys_clone(void){
 }
 
 int
-sys_join(void){
+sys_join(void)
+{
   return join();
+}
+
+int 
+sys_setPriority(void)
+{
+  int newPriority;
+  if (argint(0, &newPriority) < 0)
+    return -1;
+  else
+    return setPriority(newPriority);
+}
+
+int 
+sys_changePolicy(void)
+{
+  int newPolicy;
+  if (argint(0, &newPolicy) < 0)
+    return -1;
+  else
+    return changePolicy(newPolicy);
+}
+
+int 
+sys_getTurnAroundTime(void)
+{
+  int pid;
+  if (argint(0, &pid) < 0)
+    return -1;
+  else
+    return getTurnAroundTime(pid);
+}
+
+int 
+sys_getWaitingTime(void)
+{
+  int pid;
+  if (argint(0, &pid) < 0)
+    return -1;
+  else
+    return getWaitingTime(pid);
+}
+
+int 
+sys_getCBT(void)
+{
+  int pid;
+  if (argint(0, &pid) < 0)
+    return -1;
+  else
+    return getCBT(pid);
+}
+
+int 
+sys_customizedWait(void)
+{
+  int *procTimes;
+  if (argptr(0, (void *)&procTimes, sizeof(*procTimes)) < 0)
+  {
+    return -1;
+  }
+  else
+  {
+    return customWait(procTimes);
+  }
+}
+
+int 
+sys_setQueue(void)
+{
+  int queueNumber;
+  if (argint(0, &queueNumber) < 0)
+  {    
+    return -1;
+  }
+  else
+    return setQueue(queueNumber);
 }

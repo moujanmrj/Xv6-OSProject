@@ -33,7 +33,7 @@ if(thread_id < 0)
 else if(thread_id == 0){
     // call the function passed to thread_create
     (fn)(arg);
-    // freaa space when function is finished
+    // free space when function is finished
     free(stack);
     exit();
 }

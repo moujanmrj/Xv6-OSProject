@@ -120,6 +120,13 @@ found:
   memset(p->context, 0, sizeof *p->context);
   p->context->eip = (uint)forkret;
 
+  p->sleepingtime = 0;
+  p->runnabletime = 0;
+  p->runningtime = 0;
+  p->queue = 0;
+  p->remainingtime = QUANTOM;
+  p->priority = PRIORITYDEF;
+
   return p;
 }
 
@@ -653,7 +660,7 @@ clone (void *stack)
   // increase threads number for parent, default value of threads for child is -1
     curproc->threads++;
 
-    // Remember stack grows downwards Thus the stackTop will be in the address given by parer
+    // Remember stack grows downwards Thus the stackTop will be in the address given by parent
     np->stackTop = (int)((char*)stack + PGSIZE);
   // might be at the middle of changing address space in another thread
   acquire(&ptable.lock);
@@ -745,4 +752,141 @@ join(void)
     sleep(curproc, &ptable.lock);
   }
 }
+
+void updateStateTimes()
+{
+  struct proc *p;
+  for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+  {
+    switch (p->state)
+    {
+    case SLEEPING:
+      p->sleepingtime++;
+      break;
+
+    case RUNNABLE:
+      p->runnabletime++;
+      break;
+
+    case RUNNING:
+      p->runningtime++;
+      break;
+
+    default:
+      break;
+    }
+  }
+}
+
+enum schedulePolicy policy;
+
+int changePolicy(int newPolicy)
+{
+  if (newPolicy >= 0 && newPolicy < 5)
+  {
+    policy = newPolicy;
+    return 0;
+  }
+  else
+    return -1;
+}
+
+int getTurnAroundTime(int pid)
+{
+  // if ((&ptable.proc[pid])->state == ZOMBIE)
+  return (&ptable.proc[pid])->sleepingtime + (&ptable.proc[pid])->runnabletime + (&ptable.proc[pid])->runningtime;
+  // else
+  //   return -1;
+}
+
+int getWaitingTime(int pid)
+{
+  return (&ptable.proc[pid])->sleepingtime + (&ptable.proc[pid])->runnabletime;
+}
+
+int getCBT(int pid)
+{
+  return (&ptable.proc[pid])->runningtime;
+}
     
+int setPriority(int newPriority)
+{
+  struct proc *p = myproc();
+  if (newPriority > 0 && newPriority < 7)
+  {
+    p->priority = newPriority;
+    return 0;
+  }
+  else
+    return -1;
+}
+
+int customizedWait(int *procTimes)
+{
+  struct proc *p;
+  int havekids, pid;
+  struct proc *curproc = myproc();
+
+  acquire(&ptable.lock);
+  for (;;)
+  {
+    // Searching for exited children.
+    havekids = 0;
+    for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+    {
+      if (p->parent != curproc)
+        continue;
+      havekids = 1;
+      if (p->state == ZOMBIE)
+      {
+        int turnAroundTime = getTurnAroundTime(p->pid);
+        int waitingTime = getWaitingTime(p->pid);
+        int cbt = getCBT(p->pid);
+
+        procTimes[0] = turnAroundTime;
+        procTimes[1] = waitingTime;
+        procTimes[2] = cbt;
+        procTimes[3] = p->priority;
+
+        pid = p->pid;
+        kfree(p->kstack);
+        p->kstack = 0;
+        freevm(p->pgdir);
+        p->pid = 0;
+        p->parent = 0;
+        p->name[0] = 0;
+        p->killed = 0;
+        p->state = UNUSED;
+
+        // // Reset time spent in each state, for the next call.
+        // p->sleeping_t = 0;
+        // p->runnable_t = 0;
+        // p->running_t = 0;
+        release(&ptable.lock);
+        return pid;
+      }
+    }
+
+    if (!havekids || curproc->killed)
+    {
+      release(&ptable.lock);
+      return -1;
+    }
+
+    sleep(curproc, &ptable.lock); 
+  }
+}
+
+int setQueue(int queueNumber)
+{
+  struct proc *curproc = myproc();
+  if (queueNumber > 4 || queueNumber < 1)
+  {
+    return -1;
+  }
+  else
+  {
+    curproc->queue = queueNumber;
+    return 0;
+  }
+}
