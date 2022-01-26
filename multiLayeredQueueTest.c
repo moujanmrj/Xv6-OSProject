@@ -2,61 +2,43 @@
 #include "stat.h"
 #include "user.h"
 
-// number of children created
-#define NUM_CHILDREN 40
+#define NUMCHILDREN 60
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]){
 
-    int result = changePolicy(5);
+    int result = changePolicy(3);
     if (result == 5)
-    {
-        printf(1, "Policy changed successfully!\n");
-    }
+        printf(1, "Policy changed Successfully\n");
     else
-    {
-        printf(1, "Policy change failed!\n");
-    }
+        printf(1, "Policy change Failed\n");
 
-    int original_pid = getpid();
-    int child_num = -1;
+    int opid = getpid();
+    int childnum = -1;
 
-    for (int i = 0; i < NUM_CHILDREN; i++)
-    {
-        if (fork() == 0) // Child
-        {
+    for (int i = 0; i < NUMCHILDREN; i++){
+        if (fork() == 0) {// Child
             setQueue((i / 10) + 1);
-            if (i > 9 && i < 20)
-            {
-                setPriority(i % 6 + 1);
-            }
-            else if (i > 20 && i < 30)
-            {
-                setPriority(i % 6 + 1);
-            }
-            child_num = i + 1;
+            childnum = i + 1;
             break;
         }
     }
 
-    if (getpid() != original_pid)
-    {
+    if (getpid() != opid){
         for (int i = 1; i <= 50; i++)
-            printf(1, "/%d/: /%d/\n", child_num, i);
+            printf(1, ">%d: %d\n", childnum, i);
     }
 
     else
     {
-        int queues[NUM_CHILDREN] = {0};      // priorites for each child
-        int turnarounds[NUM_CHILDREN] = {0}; // turnaround times for each child
-        int waitings[NUM_CHILDREN] = {0};    // waiting times for each child
-        int CBTs[NUM_CHILDREN] = {0};        // CBTs for each child
+        int queues[NUMCHILDREN] = {0};      // priorites for each child
+        int turnarounds[NUMCHILDREN] = {0}; // turnaround times for each child
+        int waitings[NUMCHILDREN] = {0};    // waiting times for each child
+        int CBTs[NUMCHILDREN] = {0};        // CBTs for each child
 
-        printf(1, "\n\n\n*****Times for each child*****\n");
+        printf(1, "\n\n\n\n>Children Times\n");
         int *procTimes = malloc(4 * sizeof(int));
         int i = 0;
-        while (customizedWait(procTimes) > 0)
-        {
+        while (customizedWait(procTimes) > 0){
             int childQueue = procTimes[3];
             int childTurnaround = procTimes[0];
             int childWaiting = procTimes[1];
@@ -69,47 +51,45 @@ int main(int argc, char *argv[])
             i++;
         }
 
-        printf(1, "\n\n\n*****Times for each child*****\n");
-        for (int j = 0; j < NUM_CHILDREN; j++)
-        {
-            printf(1, "Child with priority %d -> Turnaround: %d, Waiting: %d, CBT: %d\n",
+        printf(1, "\n\n\n\n>Children Times\n");
+        for (int j = 0; j < NUMCHILDREN; j++){
+            printf(1, "Priority %d Child: >Turn Around: %d, >Waiting: %d, >CBT: %d\n",
                    queues[j], turnarounds[j], waitings[j], CBTs[j]);
         }
 
-        printf(1, "\n\n\n*****AVG Times for each queue*****\n");
-        int turnaroundsPerQueue[4] = {0};
-        int waitingsPerQueue[4] = {0};
-        int CBTsPerQueue[4] = {0};
-        for (int j = 0; j < NUM_CHILDREN; j++)
-        {
+        printf(1, "\n\n\n\n>Queues Average Times\n");
+        int turnaroundsPerQueue[6] = {0};
+        int waitingsPerQueue[6] = {0};
+        int CBTsPerQueue[6] = {0};
+
+        for (int j = 0; j < NUMCHILDREN; j++){
             int childQueue = queues[j];
             turnaroundsPerQueue[childQueue - 1] += turnarounds[j];
             waitingsPerQueue[childQueue - 1] += waitings[j];
             CBTsPerQueue[childQueue - 1] += CBTs[j];
         }
-        for (int j = 0; j < 4; j++)
-        {
-            printf(1, "Queue: %d -> AVG Turnaround: %d, AVG Waiting: %d, AVG CBT: %d\n",
+
+        for (int j = 0; j < 6; j++){
+            printf(1, "%d Queue: >Average Turn Around: %d, >Average Waiting: %d, >Average CBT: %d\n",
                    j + 1,
-                   turnaroundsPerQueue[j] / (NUM_CHILDREN / 4),
-                   waitingsPerQueue[j] / (NUM_CHILDREN / 4),
-                   CBTsPerQueue[j] / (NUM_CHILDREN / 4));
+                   turnaroundsPerQueue[j] / (NUMCHILDREN / 6),
+                   waitingsPerQueue[j] / (NUMCHILDREN / 6),
+                   CBTsPerQueue[j] / (NUMCHILDREN / 6));
         }
 
-        printf(1, "\n\n\n*****AVG Times in total*****\n");
+        printf(1, "\n\n\n>Total Average Times\n");
         int turnaroundsSum = 0;
         int waitingsSum = 0;
         int CBTsSum = 0;
-        for (int j = 0; j < NUM_CHILDREN; j++)
-        {
+        for (int j = 0; j < NUMCHILDREN; j++){
             turnaroundsSum += turnarounds[j];
             waitingsSum += waitings[j];
             CBTsSum += CBTs[j];
         }
-        printf(1, "Total -> AVG Turnaround: %d, AVG Waiting: %d, AVG CBT: %d\n",
-               turnaroundsSum / NUM_CHILDREN,
-               waitingsSum / NUM_CHILDREN,
-               CBTsSum / NUM_CHILDREN);
+        printf(1, "Total: >Average Turn Around: %d, >Average Waiting: %d, >Average CBT: %d\n",
+               turnaroundsSum / NUMCHILDREN,
+               waitingsSum / NUMCHILDREN,
+               CBTsSum / NUMCHILDREN);
     }
 
     while (wait() != -1)

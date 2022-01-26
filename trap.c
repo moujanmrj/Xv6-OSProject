@@ -103,58 +103,54 @@ trap(struct trapframe *tf)
   // Force process to give up CPU on clock tick.
   // If interrupts were on while locks held, would need to check nlock.
   if(myproc() && myproc()->state == RUNNING && tf->trapno == T_IRQ0+IRQ_TIMER){
-    // if(ticks % QUANTOM == 0)
-    //   yield();
-    
     switch (policy){
-    case DEFAULT:
-      yield();
-      break;
-
-    case ROUNDROBIN:
-      if(ticks % QUANTOM == 0)
-        yield();
-      break;
-
-    case PRIORITY:
-      yield();
-      break;
-
-    case MULTILAYREDPRIORITY:
-      switch (myproc()->queue){
-      case 1: // default
-
-      case 2: // priority scheduling
-
-      case 3: // reverse priority scheduling
+      case DEFAULT:
         yield();
         break;
 
-      case 4: // round robin scheduling
-        if (myproc()->remainingtime == 0){
-          myproc()->remainingtime = QUANTOM;
+      case ROUNDROBIN:
+        if(ticks % QUANTOM == 0)
           yield();
-        }else{
-          myproc()->remainingtime--;
+        break;
+
+      case PRIORITY:
+        yield();
+        break;
+
+      case MULTILAYREDPRIORITY:
+        if (myproc()->queue == 1){
+          if(ticks % (QUANTOM + 120) == 0){
+            yield();
+          }    
+        }else if (myproc()->queue == 2){
+          if(ticks % (QUANTOM + 100) == 0){
+            yield();
+          }
+        }else if (myproc()->queue == 3){
+          if(ticks % (QUANTOM + 80) == 0){
+            yield();
+          }
+        }else if (myproc()->queue == 4){
+          if(ticks % (QUANTOM + 60) == 0){
+            yield();
+          }
+        }else if (myproc()->queue == 5){
+          if(ticks % (QUANTOM + 40) == 0){
+            yield();
+          }
+        }else if (myproc()->queue == 6){
+          if(ticks % (QUANTOM + 20) == 0){
+            yield();
+          }
         }
         break;
-
-      default:
-        yield();
-        break;
-      }
-      break;
     }
   }
 
   if (tf->trapno == T_IRQ0 + IRQ_TIMER)
-  {
     updateStateTimes();
-  }
-  
-    // yield();
 
-  // Check if the process has been killed since we yielded
+  // Check if the process is killed since yield()
   if(myproc() && myproc()->killed && (tf->cs&3) == DPL_USER)
     exit();
 

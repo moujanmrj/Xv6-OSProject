@@ -8,6 +8,7 @@
 #include "spinlock.h"
 
 extern int readCount;
+enum schedulePolicy policy;
 
 struct {
   struct spinlock lock;
@@ -123,7 +124,7 @@ found:
   p->sleepingtime = 0;
   p->runnabletime = 0;
   p->runningtime = 0;
-  p->queue = 0;
+  p->queue = 1;
   p->remainingtime = QUANTOM;
   p->priority = PRIORITYDEF;
 
@@ -435,15 +436,14 @@ scheduler(void)
 {
   struct proc *p;
 
-  struct proc *highest_p = 0; // runnable process with highest priority
-  int hasRunnable = 0;        // Whether there exists a runnable process or not
+  struct proc *highest_p = 0; 
+  int hasRunnable = 0;        
 
   struct cpu *c = mycpu();
   c->proc = 0;
 
   for (;;)
   {
-    // Enable interrupts on this processor.
     sti();
 
     acquire(&ptable.lock);
@@ -471,7 +471,7 @@ scheduler(void)
         }
       }
 
-      for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) // finding the process with highest priority
+      for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) 
       {
         if (p->state != RUNNABLE)
           continue;
@@ -486,6 +486,15 @@ scheduler(void)
       break; 
 
     case MULTILAYREDPRIORITY:
+      for(int i = 1; i <7; i++){
+        for (p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+          if (p->state == RUNNABLE && p->queue == i){
+            switch_process(c, p);
+            break;
+          }
+          continue;
+        }
+      }
       break;
     }
     release(&ptable.lock);
@@ -800,10 +809,8 @@ join(void)
 void updateStateTimes()
 {
   struct proc *p;
-  for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
-  {
-    switch (p->state)
-    {
+  for (p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    switch (p->state){
     case SLEEPING:
       p->sleepingtime++;
       break;
@@ -822,16 +829,12 @@ void updateStateTimes()
   }
 }
 
-enum schedulePolicy policy;
-
 int changePolicy(int newPolicy)
 {
-  if (newPolicy >= 0 && newPolicy < 5)
-  {
+  if (newPolicy >= 0 && newPolicy < 5){
     policy = newPolicy;
     return 0;
-  }
-  else
+  }else
     return -1;
 }
 
@@ -856,12 +859,10 @@ int getCBT(int pid)
 int setPriority(int newPriority)
 {
   struct proc *p = myproc();
-  if (newPriority > 0 && newPriority < 7)
-  {
+  if (newPriority > 0 && newPriority < 7){
     p->priority = newPriority;
     return 0;
-  }
-  else
+  }else
     return -1;
 }
 
@@ -872,17 +873,14 @@ int customizedWait(int *procTimes)
   struct proc *curproc = myproc();
 
   acquire(&ptable.lock);
-  for (;;)
-  {
-    // Searching for exited children.
+  for (;;){
     havekids = 0;
     for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
     {
       if (p->parent != curproc)
         continue;
       havekids = 1;
-      if (p->state == ZOMBIE)
-      {
+      if (p->state == ZOMBIE){
         int turnAroundTime = getTurnAroundTime(p->pid);
         int waitingTime = getWaitingTime(p->pid);
         int cbt = getCBT(p->pid);
@@ -890,7 +888,10 @@ int customizedWait(int *procTimes)
         procTimes[0] = turnAroundTime;
         procTimes[1] = waitingTime;
         procTimes[2] = cbt;
-        procTimes[3] = p->priority;
+        if(policy == 3)
+          procTimes[3] = p->queue;
+        else
+          procTimes[3] = p->priority;
 
         pid = p->pid;
         kfree(p->kstack);
@@ -902,21 +903,18 @@ int customizedWait(int *procTimes)
         p->killed = 0;
         p->state = UNUSED;
 
-        // // Reset time spent in each state, for the next call.
-        // p->sleeping_t = 0;
-        // p->runnable_t = 0;
-        // p->running_t = 0;
+        // p->sleepingtime = 0;
+        // p->runnabletime = 0;
+        // p->runningtime = 0;
         release(&ptable.lock);
         return pid;
       }
     }
 
-    if (!havekids || curproc->killed)
-    {
+    if (!havekids || curproc->killed){
       release(&ptable.lock);
       return -1;
     }
-
     sleep(curproc, &ptable.lock); 
   }
 }
@@ -924,13 +922,11 @@ int customizedWait(int *procTimes)
 int setQueue(int queueNumber)
 {
   struct proc *curproc = myproc();
-  if (queueNumber > 4 || queueNumber < 1)
-  {
-    return -1;
-  }
-  else
-  {
+  if (queueNumber < 6 && queueNumber > 0){
     curproc->queue = queueNumber;
     return 0;
+  }
+  else{
+    return -1;
   }
 }
