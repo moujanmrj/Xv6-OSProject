@@ -7,7 +7,6 @@ int main(int argc, char *argv[]){
 
     int main_pid = getpid();
     for (int i = 0; i < 10; i++){
-        sleep(50);
         if (fork() > 0)
             break;
     }

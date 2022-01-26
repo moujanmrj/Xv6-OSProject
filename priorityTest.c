@@ -16,7 +16,6 @@ int main(int argc, char *argv[]){
     int priority = -1;
 
     for (int i = 0; i < NUM_CHILDREN; i++){
-        sleep(50);
         if (fork() == 0){// Child
             childnum = i + 1;
             priority = (i / 5) + 1;
